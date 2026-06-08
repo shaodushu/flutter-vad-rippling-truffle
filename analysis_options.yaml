@@ -1,0 +1,9 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  exclude:
+    - packages/flutter_silero_vad/example/**
+    - test/**
+
+linter:
+  rules: []
