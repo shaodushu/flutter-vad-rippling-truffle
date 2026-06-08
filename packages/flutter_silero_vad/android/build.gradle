@@ -1,0 +1,35 @@
+group 'com.example.flutter_silero_vad'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'com.android.library'
+
+// No need to apply kotlin-android plugin — AGP 9.0+ has built-in Kotlin support.
+// See: https://kotl.in/gradle/agp-built-in-kotlin
+
+android {
+    namespace "com.example.flutter_silero_vad"
+
+    // compileSdk uses the project-level compileSdk if not specified here
+    compileSdk = 35
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+
+    sourceSets {
+        main.java.srcDirs += 'src/main/kotlin'
+    }
+
+    defaultConfig {
+        minSdk = 21
+    }
+
+    dependencies {
+        implementation 'com.microsoft.onnxruntime:onnxruntime-android:1.13.1'
+    }
+}
