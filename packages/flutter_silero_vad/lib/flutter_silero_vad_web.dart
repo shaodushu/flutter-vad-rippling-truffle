@@ -75,6 +75,18 @@ class WebFlutterSileroVad extends FlutterSileroVadPlatform {
   }
 
   @override
+  Future<double?> predictRaw(Float32List data) async {
+    if (!_initialized || _adapter == null) return 0.0;
+
+    try {
+      final prob = await _adapter!.predict(data).toDart;
+      return prob.toDartDouble;
+    } catch (e) {
+      return 0.0;
+    }
+  }
+
+  @override
   Future<void> resetState() async {
     _adapter?.resetState();
     _initialized = false;

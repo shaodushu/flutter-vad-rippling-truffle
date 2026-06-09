@@ -64,6 +64,28 @@ class VadIteratorV4 constructor(
     }
 
 
+    override fun predictRaw(data: FloatArray): Float {
+        val inputOrt =
+            OnnxTensor.createTensor(env, FloatBuffer.wrap(data), longArrayOf(1, windowSizeSamples));
+        val srOrt = OnnxTensor.createTensor(env, sampleRate);
+        val hOrt = OnnxTensor.createTensor(env, hidden);
+        val cOrt = OnnxTensor.createTensor(env, cell);
+        val outputOrt = session.run(
+            mapOf(
+                "input" to inputOrt,
+                "sr" to srOrt,
+                "h" to hOrt,
+                "c" to cOrt,
+            )
+        );
+        val output = (outputOrt[0].value as Array<FloatArray>
+            ?: throw Exception("Unexpected output type"))[0][0];
+        hidden = outputOrt[1].value as Array<Array<FloatArray>>;
+        cell = outputOrt[2].value as Array<Array<FloatArray>>;
+        currentSample += windowSizeSamples;
+        return output;
+    }
+
     override fun predict(data: FloatArray): Boolean {
         val inputOrt =
             OnnxTensor.createTensor(env, FloatBuffer.wrap(data), longArrayOf(1, windowSizeSamples));

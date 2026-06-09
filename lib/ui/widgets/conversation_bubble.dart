@@ -14,67 +14,46 @@ class ConversationBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final bgColor = isUser
+        ? theme.colorScheme.primaryContainer
+        : theme.colorScheme.surfaceContainerHighest;
+    final bubbleBorder = BorderRadius.only(
+      topLeft: const Radius.circular(16),
+      topRight: const Radius.circular(16),
+      bottomRight: const Radius.circular(16),
+      bottomLeft: const Radius.circular(4),
+    );
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Row(
-        mainAxisAlignment:
-            isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          if (!isUser) _buildAvatar(Icons.smart_toy, Colors.blue),
-          const SizedBox(width: 8),
           Flexible(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                color: isUser
-                    ? Theme.of(context).colorScheme.primaryContainer
-                    : Theme.of(context).colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(16),
-                  topRight: const Radius.circular(16),
-                  bottomLeft: isUser
-                      ? const Radius.circular(16)
-                      : const Radius.circular(4),
-                  bottomRight: isUser
-                      ? const Radius.circular(4)
-                      : const Radius.circular(16),
-                ),
+                color: bgColor,
+                borderRadius: bubbleBorder,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    text,
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
+                  Text(text, style: theme.textTheme.bodyLarge),
                   const SizedBox(height: 4),
                   Text(
                     '${timestamp.hour.toString().padLeft(2, '0')}:'
                     '${timestamp.minute.toString().padLeft(2, '0')}',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withValues(alpha: 0.5),
-                        ),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                    ),
                   ),
                 ],
               ),
             ),
           ),
-          const SizedBox(width: 8),
-          if (isUser) _buildAvatar(Icons.person, Colors.green),
         ],
       ),
-    );
-  }
-
-  Widget _buildAvatar(IconData icon, Color color) {
-    return CircleAvatar(
-      radius: 16,
-      backgroundColor: color.withValues(alpha: 0.2),
-      child: Icon(icon, size: 18, color: color),
     );
   }
 }
@@ -107,7 +86,7 @@ class ConversationBubbleList extends StatelessWidget {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 ),
                 SizedBox(width: 8),
-                Text('Thinking...'),
+                Text('思考中...'),
               ],
             ),
           );

@@ -43,4 +43,8 @@ abstract class FlutterSileroVadPlatform extends PlatformInterface {
   Future<bool?> predict(Float32List data) {
     throw UnimplementedError('predict() has not been implemented.');
   }
+
+  Future<double?> predictRaw(Float32List data) {
+    throw UnimplementedError('predictRaw() has not been implemented.');
+  }
 }
