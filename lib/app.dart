@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'livekit/voice_chat_room.dart';
 import 'ui/home_screen.dart';
-import 'voice/voice_controller.dart';
 
 class VoiceDemoApp extends StatefulWidget {
   const VoiceDemoApp({super.key});
@@ -10,37 +10,31 @@ class VoiceDemoApp extends StatefulWidget {
 }
 
 class _VoiceDemoAppState extends State<VoiceDemoApp> {
-  late final VoiceController _controller;
+  late final VoiceChatRoom _room;
 
   @override
   void initState() {
     super.initState();
-    _controller = VoiceController();
+    _room = VoiceChatRoom();
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _room.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Voice Demo',
+      title: '语音对话',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorSchemeSeed: Colors.blue,
         useMaterial3: true,
         brightness: Brightness.light,
       ),
-      darkTheme: ThemeData(
-        colorSchemeSeed: Colors.blue,
-        useMaterial3: true,
-        brightness: Brightness.dark,
-      ),
-      themeMode: ThemeMode.system,
-      home: HomeScreen(controller: _controller),
+      home: HomeScreen(room: _room),
     );
   }
 }

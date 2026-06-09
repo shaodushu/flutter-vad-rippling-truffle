@@ -37,6 +37,12 @@ class FlutterSileroVadPlugin : FlutterPlugin, MethodCallHandler {
                 result.success(res)
             }
 
+            "predictRaw" -> {
+                val data = call.argument<FloatArray>("data")!!
+                val prob = vad.predictRaw(data)
+                result.success(prob)
+            }
+
             "resetState" -> {
                 vad.resetState()
                 result.success("vad reset state")

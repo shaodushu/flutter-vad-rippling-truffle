@@ -1,200 +1,132 @@
 import 'package:flutter/material.dart';
-import '../voice/voice_controller.dart';
-import '../voice/voice_state.dart';
+import '../livekit/voice_chat_room.dart';
+import '../livekit/voice_chat_state.dart';
 import 'widgets/conversation_bubble.dart';
-import 'widgets/voice_button.dart';
 import 'widgets/waveform_view.dart';
-import 'widgets/settings_panel.dart';
 
 class HomeScreen extends StatefulWidget {
-  final VoiceController controller;
+  final VoiceChatRoom room;
 
-  const HomeScreen({super.key, required this.controller});
+  const HomeScreen({super.key, required this.room});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final List<ConversationBubbleData> _messages = [];
-  final TextEditingController _textCtrl = TextEditingController();
-
   @override
   void initState() {
     super.initState();
-    widget.controller.transcript.addListener(_onTranscriptChanged);
-    widget.controller.response.addListener(_onResponseChanged);
+    widget.room.transcript.addListener(_onTranscript);
+    widget.room.response.addListener(_onResponse);
+    // Auto-connect to LiveKit
+    widget.room.connect();
   }
 
   @override
   void dispose() {
-    widget.controller.transcript.removeListener(_onTranscriptChanged);
-    widget.controller.response.removeListener(_onResponseChanged);
-    _textCtrl.dispose();
+    widget.room.transcript.removeListener(_onTranscript);
+    widget.room.response.removeListener(_onResponse);
     super.dispose();
   }
 
-  void _onTranscriptChanged() {
-    final text = widget.controller.transcript.value;
+  void _onTranscript() {
+    final text = widget.room.transcript.value;
     if (text.isNotEmpty) {
-      setState(() {
-        _messages.add(ConversationBubbleData(
-          text: text,
-          isUser: true,
-          timestamp: DateTime.now(),
-        ));
-      });
+      setState(() {});
     }
   }
 
-  void _onResponseChanged() {
-    final text = widget.controller.response.value;
+  void _onResponse() {
+    final text = widget.room.response.value;
     if (text.isNotEmpty) {
-      setState(() {
-        // Remove last AI message if exists and update
-        if (_messages.isNotEmpty && !_messages.last.isUser) {
-          _messages.removeLast();
-        }
-        _messages.add(ConversationBubbleData(
-          text: text,
-          isUser: false,
-          timestamp: DateTime.now(),
-        ));
-      });
+      setState(() {});
     }
   }
 
-  void _openSettings() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (_) => SettingsPanel(
-        onSaved: () {
-          // Recreate LLM client with new config
-          widget.controller.dispose();
-        },
-      ),
-    );
-  }
-
-  void _sendText() {
-    final text = _textCtrl.text.trim();
-    if (text.isEmpty) return;
-    _textCtrl.clear();
-    widget.controller.sendText(text);
+  Color _statusColor(VoiceChatState state) {
+    return switch (state) {
+      VoiceChatState.disconnected => Colors.grey,
+      VoiceChatState.connecting => Colors.grey,
+      VoiceChatState.connected => Colors.blue,
+      VoiceChatState.listening => Colors.red,
+      VoiceChatState.thinking => Colors.orange,
+      VoiceChatState.speaking => Colors.green,
+      VoiceChatState.error => Colors.red,
+    };
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Voice Demo'),
+        title: const Text('语音对话'),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: _openSettings,
-          ),
-        ],
       ),
       body: Column(
         children: [
           // Conversation bubbles
           Expanded(
-            child: ValueListenableBuilder<VoiceState>(
-              valueListenable: widget.controller.state,
+            child: ValueListenableBuilder<VoiceChatState>(
+              valueListenable: widget.room.state,
               builder: (context, state, _) {
                 return ConversationBubbleList(
-                  messages: _messages,
-                  isProcessing: state == VoiceState.processing,
+                  messages: widget.room.messages
+                      .map((m) => ConversationBubbleData(
+                            text: m.text,
+                            isUser: m.isUser,
+                            timestamp: m.timestamp,
+                          ))
+                      .toList(),
+                  isProcessing: state == VoiceChatState.thinking,
                 );
               },
             ),
           ),
 
-          // Status indicator
-          ValueListenableBuilder<VoiceState>(
-            valueListenable: widget.controller.state,
-            builder: (context, state, _) {
-              if (state == VoiceState.speaking) {
-                return const LinearProgressIndicator();
-              }
-              return const SizedBox.shrink();
-            },
-          ),
-
-          // Waveform + Voice Button
+          // Bottom: waveform + status
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, -2),
-                ),
-              ],
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            color: theme.colorScheme.surface,
             child: SafeArea(
               top: false,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ValueListenableBuilder<double>(
-                    valueListenable: widget.controller.audioLevel,
-                    builder: (context, level, _) {
-                      return WaveformView(
-                        level: level,
-                        color: Theme.of(context).colorScheme.primary,
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
+              child: ValueListenableBuilder<VoiceChatState>(
+                valueListenable: widget.room.state,
+                builder: (context, state, _) {
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Text input
-                      Expanded(
-                        child: SizedBox(
-                          height: 40,
-                          child: TextField(
-                            controller: _textCtrl,
-                            decoration: const InputDecoration(
-                              hintText: 'Type a message...',
-                              border: OutlineInputBorder(),
-                              contentPadding:
-                                  EdgeInsets.symmetric(horizontal: 12),
-                              isDense: true,
-                            ),
-                            onSubmitted: (_) => _sendText(),
+                      // Waveform
+                      SizedBox(
+                        width: 200,
+                        child: Opacity(
+                          opacity: state == VoiceChatState.listening ||
+                                  state == VoiceChatState.speaking
+                              ? 1.0
+                              : 0.3,
+                          child: WaveformView(
+                            level: state == VoiceChatState.listening ||
+                                    state == VoiceChatState.speaking
+                                ? 0.3
+                                : 0.0,
+                            color: _statusColor(state),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      IconButton(
-                        icon: const Icon(Icons.send),
-                        onPressed: _sendText,
+                      const SizedBox(height: 8),
+                      // Status label
+                      Text(
+                        chatStateLabel(state),
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w500,
+                          color: _statusColor(state),
+                        ),
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 8),
-                  // Voice button
-                  ValueListenableBuilder<VoiceState>(
-                    valueListenable: widget.controller.state,
-                    builder: (context, state, _) {
-                      return VoiceButton(
-                        state: state,
-                        onPressed: () {
-                          if (state == VoiceState.idle) {
-                            widget.controller.start();
-                          } else {
-                            widget.controller.stop();
-                          }
-                        },
-                      );
-                    },
-                  ),
-                ],
+                  );
+                },
               ),
             ),
           ),

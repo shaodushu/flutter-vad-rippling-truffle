@@ -45,4 +45,10 @@ class FlutterSileroVad {
   Future<bool?> predict(Float32List data) {
     return FlutterSileroVadPlatform.instance.predict(data);
   }
+
+  /// Returns the raw probability (0.0–1.0) from Silero VAD, without any
+  /// thresholding or state tracking. Useful for custom smoothing in Dart.
+  Future<double?> predictRaw(Float32List data) {
+    return FlutterSileroVadPlatform.instance.predictRaw(data);
+  }
 }
