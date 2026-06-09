@@ -1,5 +1,5 @@
 name: flutter_voice_demo
-description: "Flutter Demo - VAD + ASR + LLM + TTS Voice Conversation"
+description: "LiveKit Voice Chat - AI Voice Assistant"
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -11,27 +11,11 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.8
 
-  # VAD - Silero Voice Activity Detection (端侧 ONNX Runtime)
-  flutter_silero_vad:
-    path: packages/flutter_silero_vad
-
-  # Audio Recording
-  record: ^7.0.0
-
-  # ASR - Speech to Text
-  speech_to_text: ^7.0.0
-
-  # TTS - Text to Speech
-  flutter_tts: ^4.2.2
-
-  # LLM HTTP Client
-  http: ^1.3.0
+  # LiveKit WebRTC SFU client
+  livekit_client: ^2.8.0
 
   # Permissions
   permission_handler: ^11.3.1
-
-  # File storage (VAD model extraction)
-  path_provider: ^2.1.5
 
 dev_dependencies:
   flutter_test:
@@ -41,5 +25,4 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
-  assets:
-    - assets/models/silero_vad.onnx
+  assets: []

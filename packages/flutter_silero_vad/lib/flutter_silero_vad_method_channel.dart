@@ -42,4 +42,13 @@ class MethodChannelFlutterSileroVad extends FlutterSileroVadPlatform {
     );
     return res;
   }
+
+  @override
+  Future<double?> predictRaw(Float32List data) async {
+    final res = await methodChannel.invokeMethod<double>(
+      'predictRaw',
+      {'data': data},
+    );
+    return res;
+  }
 }

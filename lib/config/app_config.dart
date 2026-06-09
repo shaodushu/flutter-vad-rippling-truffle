@@ -2,13 +2,11 @@ class AppConfig {
   // LLM (DeepSeek / OpenAI compatible)
   static String llmApiKey = '';
   static String llmBaseUrl = 'https://api.deepseek.com';
-  static String llmModel = 'deepseek-chat';
+  static String llmModel = 'deepseek-v4-flash';
+  static String systemPrompt = '你是一个友好的中文语音助手。请用中文简洁自然地回答用户的问题。';
 
-  // System prompt for the AI
-  static String systemPrompt = 'You are a helpful voice assistant. Keep your responses concise.';
-
-  // Silero VAD
-  static double vadThreshold = 0.5;
-  static int vadMinSilenceDurationMs = 500; // 500ms silence triggers speech end
-  static int vadSpeechPadMs = 30;
+  // LiveKit
+  static String livekitUrl = 'ws://localhost:7880';
+  static String livekitToken =
+      '';
 }
