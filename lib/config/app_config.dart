@@ -7,6 +7,5 @@ class AppConfig {
 
   // LiveKit
   static String livekitUrl = 'ws://localhost:7880';
-  static String livekitToken =
-      '';
+  static String livekitToken = '';
 }
