@@ -48,3 +48,6 @@ app.*.map.json
 **/build/reports/
 **/.kotlin/
 *.output
+
+# Environment variables (sensitive)
+.env
