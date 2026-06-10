@@ -11,6 +11,7 @@ import re
 import time
 from pathlib import Path
 
+import httpx
 import jwt
 from dotenv import load_dotenv
 from livekit import rtc
@@ -21,7 +22,8 @@ from livekit.plugins import openai, silero
 from livekit.agents.voice.turn import TurnHandlingOptions
 from openai import AsyncClient as OpenAIAsyncClient
 
-from sensevoice_stt import SenseVoiceAPI_STT
+from funasr_stt import FunASRSTT
+# from sensevoice_stt import SenseVoiceAPI_STT
 from index_tts import IndexTTSPlugin
 
 logger = logging.getLogger("voice-agent")
@@ -103,25 +105,30 @@ class VoiceAgent(Agent):
             logger.warning("item event error: %s", e)
 
     async def _classify_intent(self, text: str) -> str:
-        """用 LLM 判断用户是否在对 AI 说话。返回 'AI', 'HUMAN', 或 'NOISE'。"""
+        """用本地 Ollama Qwen 模型判断是否在对 AI 说话。"""
+        t = text.strip()
+        if not t:
+            return "NOISE"
         try:
-            client = OpenAIAsyncClient(api_key=LLM_API_KEY, base_url=LLM_BASE_URL)
-            resp = await client.chat.completions.create(
-                model=LLM_MODEL,
-                messages=[
-                    {"role": "system", "content": "你是一个意图分类器。判断下面的话是否是对AI语音助手说的。如果是在和AI对话、问问题、下指令，返回AI。如果是对别人说的、日常闲聊自言自语、杂音误识别，返回HUMAN。只返回AI或HUMAN，不要其他文字。"},
-                    {"role": "user", "content": f"用户说：{text}"},
-                ],
-                temperature=0.1,
-                max_tokens=10,
-            )
-            result = resp.choices[0].message.content.strip().upper()
-            await client.close()
-            # 只接受 AI 或 HUMAN
-            if result in ("AI",):
-                logger.info("INTENT=AI: %s", text[:30])
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                resp = await client.post(
+                    "http://localhost:11434/v1/chat/completions",
+                    json={
+                        "model": "qwen2.5:1.5b",
+                        "messages": [
+                            {"role": "system", "content": "你是一个分类器。只输出AI或HUMAN。"},
+                            {"role": "user", "content": f"用户说：{t}"},
+                        ],
+                        "temperature": 0.1,
+                        "max_tokens": 10,
+                    },
+                )
+                data = resp.json()
+                result = data["choices"][0]["message"]["content"].strip().upper()
+            if result == "AI":
+                logger.info("INTENT=AI: %s", t[:30])
                 return "AI"
-            logger.info("INTENT=HUMAN (%s): %s", result, text[:30])
+            logger.info("INTENT=HUMAN (%s): %s", result, t[:30])
             return "HUMAN"
         except Exception as e:
             logger.warning("INTENT classification failed: %s", e)
@@ -203,7 +210,8 @@ async def main():
 
     # Components
     llm = openai.LLM(model=LLM_MODEL, base_url=LLM_BASE_URL, api_key=LLM_API_KEY)
-    stt = SenseVoiceAPI_STT(base_url=ASR_BASE_URL, api_key=ASR_API_KEY, model=ASR_MODEL)
+    stt = FunASRSTT(ws_url=ASR_BASE_URL.replace("http://", "wss://"))
+    # stt = SenseVoiceAPI_STT(base_url=ASR_BASE_URL, api_key=ASR_API_KEY, model=ASR_MODEL)
     tts = IndexTTSPlugin(base_url=TTS_BASE_URL, api_key=TTS_API_KEY,
                          model=TTS_MODEL, voice=TTS_VOICE, room=room)
     vad = silero.VAD.load(

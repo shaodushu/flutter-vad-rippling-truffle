@@ -100,16 +100,23 @@ class _IndexTTSChunkedStream(tts.ChunkedStream):
 
         # Send the text for this chunk to the Flutter UI BEFORE synthesizing
         if await self._send_chunk(clean_text):
+            output_emitter.initialize(
+                request_id="index-tts",
+                sample_rate=SAMPLE_RATE,
+                num_channels=NUM_CHANNELS,
+                mime_type="audio/wav",
+            )
+            output_emitter.flush()
             return  # SKIP 消息不合成语音
 
         try:
             async with httpx.AsyncClient(timeout=httpx.Timeout(120.0, connect=30.0, read=120.0, write=30.0, pool=10.0)) as client:
+                headers = {"Content-Type": "application/json"}
+                if self._tts._api_key:
+                    headers["Authorization"] = f"Bearer {self._tts._api_key}"
                 resp = await client.post(
                     f"{self._tts._base_url}/audio/speech",
-                    headers={
-                        "Authorization": f"Bearer {self._tts._api_key}",
-                        "Content-Type": "application/json",
-                    },
+                    headers=headers,
                     json={
                         "model": self._tts._model,
                         "input": clean_text,

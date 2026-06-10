@@ -7,6 +7,7 @@ import 'package:livekit_client/livekit_client.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:fireredvad/fireredvad.dart';
+import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import '../config/app_config.dart';
 import 'voice_chat_state.dart';
 
@@ -275,8 +276,19 @@ class VoiceChatRoom {
   }
 
   Future<String> _getToken() async {
-    if (AppConfig.livekitToken.isNotEmpty) return AppConfig.livekitToken;
-    return '';
+    final jwt = JWT({
+      'iss': AppConfig.livekitApiKey,
+      'sub': 'flutter_user',
+      'exp': DateTime.now().millisecondsSinceEpoch ~/ 1000 + 3600,
+      'video': {
+        'roomJoin': true,
+        'room': 'voice-demo',
+        'canPublish': true,
+        'canSubscribe': true,
+        'canPublishData': true,
+      },
+    });
+    return jwt.sign(SecretKey(AppConfig.livekitApiSecret));
   }
 
   /// Disconnect from the room.

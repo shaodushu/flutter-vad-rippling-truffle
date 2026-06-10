@@ -14,5 +14,8 @@ class AppConfig {
   // LiveKit
   static String get livekitUrl =>
       dotenv.get('LIVEKIT_URL', fallback: 'ws://localhost:7880');
-  static String get livekitToken => dotenv.get('LIVEKIT_TOKEN', fallback: '');
+  static String get livekitApiKey =>
+      dotenv.get('LIVEKIT_API_KEY', fallback: 'devkey');
+  static String get livekitApiSecret =>
+      dotenv.get('LIVEKIT_API_SECRET', fallback: 'secret');
 }

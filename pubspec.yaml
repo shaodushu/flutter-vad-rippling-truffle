@@ -21,6 +21,9 @@ dependencies:
   flutter_dotenv: ^5.2.1
   audio_session: ^0.2.3
 
+  # JWT for LiveKit token generation
+  dart_jsonwebtoken: ^3.4.1
+
   # Local VAD (pure Dart DFSMN)
   fireredvad:
     git: https://github.com/voxcom-us/fireredvad-dart.git
