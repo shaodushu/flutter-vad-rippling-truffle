@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:livekit_client/livekit_client.dart';
+import 'package:audio_session/audio_session.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:fireredvad/fireredvad.dart';
@@ -78,6 +79,29 @@ class VoiceChatRoom {
       return;
     }
 
+    // Configure audio session for playback + recording
+    try {
+      final session = await AudioSession.instance;
+      await session.configure(AudioSessionConfiguration(
+        avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
+        avAudioSessionCategoryOptions:
+            AVAudioSessionCategoryOptions.defaultToSpeaker |
+            AVAudioSessionCategoryOptions.allowBluetooth,
+        avAudioSessionMode: AVAudioSessionMode.voiceChat,
+        avAudioSessionRouteSharingPolicy:
+            AVAudioSessionRouteSharingPolicy.defaultPolicy,
+        avAudioSessionSetActiveOptions: AVAudioSessionSetActiveOptions.none,
+        androidAudioAttributes: const AndroidAudioAttributes(
+          contentType: AndroidAudioContentType.speech,
+          usage: AndroidAudioUsage.voiceCommunication,
+        ),
+        androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
+        androidWillPauseWhenDucked: true,
+      ));
+    } catch (e) {
+      debugPrint('[LK] audio session config error: $e');
+    }
+
     try {
       _room = Room(
         roomOptions: RoomOptions(
@@ -116,6 +140,11 @@ class VoiceChatRoom {
     switch (event) {
       case DataReceivedEvent e:
         _handleData(e.data);
+      case TrackSubscribedEvent e:
+        if (e.track is AudioTrack) {
+          debugPrint('[LK] audio track subscribed, starting playback');
+          (e.track as AudioTrack).start();
+        }
       case ActiveSpeakersChangedEvent e:
         _onActiveSpeakersChanged(e.speakers);
       case ParticipantConnectedEvent e:
