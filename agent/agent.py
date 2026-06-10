@@ -135,7 +135,7 @@ class VoiceAgent(Agent):
             return "AI"  # 出错时默认放行
 
     async def on_user_turn_completed(self, turn_ctx, new_message):
-        """用户说完 → LLM 判断是否对 AI 说话。"""
+        """用户说完 → 模型意图判断 → 是AI则打断TTS并回复，否则忽略。"""
         text = new_message.text_content if new_message else ""
         if not text:
             return
@@ -143,15 +143,14 @@ class VoiceAgent(Agent):
         if _is_backchannel(text):
             logger.info("SKIP backchannel: %s", text[:20])
             raise StopResponse()
-        # 快速预检：含"他们/她们/你们"大概率对别人说
-        if any(m in text for m in ["他们", "她们", "你们"]):
-            logger.info("SKIP (group-directed): %s", text[:30])
-            raise StopResponse()
-        # LLM 分类
+        # LLM 意图分类
         intent = await self._classify_intent(text)
         if intent != "AI":
+            logger.info("INTENT=HUMAN → 不打断, TTS继续播放")
             raise StopResponse()
-        # 通过 → 正常处理
+        # 是 AI 对话 → 手动打断当前 TTS，再正常回复
+        if self.session:
+            await self.session.interrupt()
         self._undirected_count = 0
         await self._send("agent_speaking")
         await self._send("user_transcript", text=text)
@@ -226,12 +225,7 @@ async def main():
         "turn_detection": "vad",
         "endpointing": {"min_delay": 0.5, "max_delay": 1.5},
         "interruption": {
-            "enabled": True,
-            "mode": "vad",
-            "min_words": 3,
-            "min_duration": 0.8,
-            "resume_false_interruption": True,
-            "false_interruption_timeout": 2.0,
+            "enabled": False,  # 手动控制打断，不由 VAD 自动触发
         },
     }
 
