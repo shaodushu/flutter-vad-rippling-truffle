@@ -58,7 +58,7 @@ class ConversationBubble extends StatelessWidget {
   }
 }
 
-class ConversationBubbleList extends StatelessWidget {
+class ConversationBubbleList extends StatefulWidget {
   final List<ConversationBubbleData> messages;
   final bool isProcessing;
 
@@ -69,12 +69,47 @@ class ConversationBubbleList extends StatelessWidget {
   });
 
   @override
+  State<ConversationBubbleList> createState() => _ConversationBubbleListState();
+}
+
+class _ConversationBubbleListState extends State<ConversationBubbleList> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void didUpdateWidget(ConversationBubbleList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.messages.length > oldWidget.messages.length ||
+        widget.isProcessing != oldWidget.isProcessing) {
+      _scrollToBottom();
+    }
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return ListView.builder(
+      controller: _scrollController,
       padding: const EdgeInsets.only(top: 16, bottom: 80),
-      itemCount: messages.length + (isProcessing ? 1 : 0),
+      itemCount: widget.messages.length + (widget.isProcessing ? 1 : 0),
       itemBuilder: (context, index) {
-        if (index == messages.length) {
+        if (widget.isProcessing && index == widget.messages.length) {
           return const Padding(
             padding: EdgeInsets.all(16),
             child: Row(
@@ -92,9 +127,9 @@ class ConversationBubbleList extends StatelessWidget {
           );
         }
         return ConversationBubble(
-          text: messages[index].text,
-          isUser: messages[index].isUser,
-          timestamp: messages[index].timestamp,
+          text: widget.messages[index].text,
+          isUser: widget.messages[index].isUser,
+          timestamp: widget.messages[index].timestamp,
         );
       },
     );

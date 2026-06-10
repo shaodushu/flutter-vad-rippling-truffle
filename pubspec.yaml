@@ -19,6 +19,14 @@ dependencies:
 
   # Environment variables (.env)
   flutter_dotenv: ^5.2.1
+  audio_session: ^0.2.3
+
+  # Local VAD (pure Dart DFSMN)
+  fireredvad:
+    git: https://github.com/voxcom-us/fireredvad-dart.git
+
+  # PCM audio capture for local VAD
+  flutter_sound: ^9.24.4
 
 dev_dependencies:
   flutter_test:
@@ -30,3 +38,5 @@ flutter:
 
   assets:
     - .env
+    - assets/vad/weights.bin
+    - assets/vad/cmvn.json

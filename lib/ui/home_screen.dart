@@ -13,35 +13,45 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin, WidgetsBindingObserver {
+  late final AnimationController _waveformAnimation;
+
   @override
   void initState() {
     super.initState();
-    widget.room.transcript.addListener(_onTranscript);
-    widget.room.response.addListener(_onResponse);
+    WidgetsBinding.instance.addObserver(this);
+    widget.room.transcript.addListener(_onDataUpdate);
+    widget.room.response.addListener(_onDataUpdate);
+    widget.room.streamingResponse.addListener(_onDataUpdate);
+    // Continuous waveform animation at ~60fps
+    _waveformAnimation = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    )..repeat();
     // Auto-connect to LiveKit
     widget.room.connect();
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // 亮屏后恢复 VAD 和连接
+    if (state == AppLifecycleState.resumed) {
+      widget.room.resumeAfterSleep();
+    }
+  }
+
+  @override
   void dispose() {
-    widget.room.transcript.removeListener(_onTranscript);
-    widget.room.response.removeListener(_onResponse);
+    WidgetsBinding.instance.removeObserver(this);
+    _waveformAnimation.dispose();
+    widget.room.transcript.removeListener(_onDataUpdate);
+    widget.room.response.removeListener(_onDataUpdate);
+    widget.room.streamingResponse.removeListener(_onDataUpdate);
     super.dispose();
   }
 
-  void _onTranscript() {
-    final text = widget.room.transcript.value;
-    if (text.isNotEmpty) {
-      setState(() {});
-    }
-  }
-
-  void _onResponse() {
-    final text = widget.room.response.value;
-    if (text.isNotEmpty) {
-      setState(() {});
-    }
+  void _onDataUpdate() {
+    setState(() {});
   }
 
   Color _statusColor(VoiceChatState state) {
@@ -67,22 +77,17 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: Column(
         children: [
-          // Conversation bubbles
+          // Conversation bubbles (rebuilds via setState from transcript/response)
           Expanded(
-            child: ValueListenableBuilder<VoiceChatState>(
-              valueListenable: widget.room.state,
-              builder: (context, state, _) {
-                return ConversationBubbleList(
-                  messages: widget.room.messages
-                      .map((m) => ConversationBubbleData(
-                            text: m.text,
-                            isUser: m.isUser,
-                            timestamp: m.timestamp,
-                          ))
-                      .toList(),
-                  isProcessing: state == VoiceChatState.thinking,
-                );
-              },
+            child: ConversationBubbleList(
+              messages: widget.room.messages
+                  .map((m) => ConversationBubbleData(
+                        text: m.text,
+                        isUser: m.isUser,
+                        timestamp: m.timestamp,
+                      ))
+                  .toList(),
+              isProcessing: widget.room.state.value == VoiceChatState.thinking,
             ),
           ),
 
@@ -92,41 +97,45 @@ class _HomeScreenState extends State<HomeScreen> {
             color: theme.colorScheme.surface,
             child: SafeArea(
               top: false,
-              child: ValueListenableBuilder<VoiceChatState>(
-                valueListenable: widget.room.state,
-                builder: (context, state, _) {
-                  return Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Waveform
-                      SizedBox(
-                        width: 200,
-                        child: Opacity(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Animated waveform (60fps via AnimationController)
+                  SizedBox(
+                    width: 200,
+                    child: AnimatedBuilder(
+                      animation: _waveformAnimation,
+                      builder: (context, _) {
+                        final state = widget.room.state.value;
+                        return Opacity(
                           opacity: state == VoiceChatState.listening ||
                                   state == VoiceChatState.speaking
                               ? 1.0
                               : 0.3,
                           child: WaveformView(
-                            level: state == VoiceChatState.listening ||
-                                    state == VoiceChatState.speaking
-                                ? 0.3
-                                : 0.0,
+                            level: widget.room.audioLevel.value,
+                            phase: _waveformAnimation.value,
                             color: _statusColor(state),
                           ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      // Status label
-                      Text(
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  // Status label (only rebuilds on state change)
+                  ValueListenableBuilder<VoiceChatState>(
+                    valueListenable: widget.room.state,
+                    builder: (context, state, _) {
+                      return Text(
                         chatStateLabel(state),
                         style: theme.textTheme.bodyLarge?.copyWith(
                           fontWeight: FontWeight.w500,
                           color: _statusColor(state),
                         ),
-                      ),
-                    ],
-                  );
-                },
+                      );
+                    },
+                  ),
+                ],
               ),
             ),
           ),

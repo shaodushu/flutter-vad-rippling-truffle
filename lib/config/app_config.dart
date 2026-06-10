@@ -9,7 +9,7 @@ class AppConfig {
       dotenv.get('DEEPSEEK_MODEL', fallback: 'deepseek-v4-flash');
   static String get systemPrompt => dotenv.get(
       'SYSTEM_PROMPT',
-      fallback: '你是一个友好的中文语音助手。请用中文简洁自然地回答用户的问题。');
+      fallback: '你是一个友好的中文语音助手。请用中文简洁自然地回答用户的问题。不要使用任何 Markdown 格式，不要使用表情符号，只输出纯文本。');
 
   // LiveKit
   static String get livekitUrl =>

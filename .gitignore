@@ -51,3 +51,6 @@ app.*.map.json
 
 # Environment variables (sensitive)
 .env
+
+# Python virtual environment
+agent/.venv/
