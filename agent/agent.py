@@ -142,7 +142,7 @@ class VoiceAgent(Agent):
         """预分类意图并缓存结果。"""
         try:
             greeting_pattern = re.compile(
-                r'^(你好|嗨|hi|hello|嘿|hey|在吗|在不在|早上好|下午好|晚上好)[，。!！?？\s]',
+                r'^(你好|嗨|hi|hello|嘿|hey|在吗|在不在|早上好|下午好|晚上好)[，。!！?？\s]*',
                 re.IGNORECASE,
             )
             if greeting_pattern.match(text):
@@ -164,7 +164,7 @@ class VoiceAgent(Agent):
             raise StopResponse()
         # Arbiter: 优先使用预分类缓存的意图
         greeting_pattern = re.compile(
-            r'^(你好|嗨|hi|hello|嘿|hey|在吗|在不在|早上好|下午好|晚上好)[，。!！?？\s]',
+            r'^(你好|嗨|hi|hello|嘿|hey|在吗|在不在|早上好|下午好|晚上好)[，。!！?？\s]*',
             re.IGNORECASE,
         )
         if greeting_pattern.match(text.strip()):
