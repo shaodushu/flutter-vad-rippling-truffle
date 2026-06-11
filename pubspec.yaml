@@ -25,9 +25,6 @@ dependencies:
   fireredvad:
     git: https://github.com/voxcom-us/fireredvad-dart.git
 
-  # PCM audio capture for local VAD
-  flutter_sound: ^9.24.4
-
 dev_dependencies:
   flutter_test:
     sdk: flutter

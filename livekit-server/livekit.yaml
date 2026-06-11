@@ -6,10 +6,13 @@ rtc:
   port_range_end: 60000
   use_external_ip: false
   tcp_port: 7881
+  ice_preference_subscriber: "tcp"
+  ice_preference_publisher: "tcp"
 turn:
   enabled: false
 logging:
   json: false
   level: info
 keys:
+  devkey: secret
   API15c1419b989bdc223146ded6: xgSdQaBI3TaLnoUm9Hzk5TE/qn/yMe5webg0NJQTOTs=
